@@ -18,4 +18,24 @@ namespace AdventOfCode.Aoc2022.Day17
             Offset = offset;
         }
     }
+
+    public class CurrentRock2
+    {
+        /*
+         * Rock within chamber, such as:
+         * 0b00001000
+         * 0b00011100
+         * 0b00001000
+         */
+        public byte[] bytes { get; set; }
+
+        // Y offset from the top of chamber
+        public int YOffset { get; set; }
+
+        public CurrentRock2(byte[] bytes, int yOffset)
+        {
+            this.bytes = bytes;
+            YOffset = yOffset;
+        }
+    }
 }

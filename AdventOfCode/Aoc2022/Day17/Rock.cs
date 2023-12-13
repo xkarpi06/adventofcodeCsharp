@@ -41,6 +41,40 @@ namespace AdventOfCode.Aoc2022.Day17
         }
 
         /*
+         * Returns byte array representing coordinates of each pixel of the shape as if spawned in top left corner
+         */
+        public static byte[] GetCoordsByteArray(this Rock rock)
+        {
+            return rock switch
+            {
+                Rock.MINUS => [
+                    0b11110000, // ####
+                ],
+                Rock.PLUS => [
+                    0b01000000, // .#.
+                    0b11100000, // ###
+                    0b01000000, // .#.
+                ],
+                Rock.L => [
+                    0b00100000, // ..#
+                    0b00100000, // ..#
+                    0b11100000, // ###
+                ],
+                Rock.I => [
+                    0b10000000, // #
+                    0b10000000, // #
+                    0b10000000, // #
+                    0b10000000, // #
+                ],
+                Rock.SQUARE => [
+                    0b11000000, // ##   
+                    0b11000000, // ##
+                ],
+                _ => []
+            };
+        }
+
+        /*
          * Hard coded because the shapes will hardly ever change
          */
         public static int GetHeight(this Rock rock)
@@ -74,7 +108,7 @@ namespace AdventOfCode.Aoc2022.Day17
 
         public static List<Rock> GetOrderedList()
         {
-            return new List<Rock>() { Rock.MINUS, Rock.PLUS, Rock.L, Rock.I, Rock.SQUARE };
+            return new List<Rock> { Rock.MINUS, Rock.PLUS, Rock.L, Rock.I, Rock.SQUARE };
         }
     }
 }

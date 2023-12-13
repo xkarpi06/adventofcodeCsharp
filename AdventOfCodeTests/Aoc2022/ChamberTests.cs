@@ -24,7 +24,8 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestInitialize]
         public void TestInitialize()
         {
-            _chamber = new ByteChamber();
+            _chamber = new ByteChamber2();
+            // _chamber = new ByteChamber();
             // _chamber = new SlowChamber();
         }
 
