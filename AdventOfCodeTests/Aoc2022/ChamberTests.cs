@@ -17,14 +17,14 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
      * edge is THREE (3) units above the highest rock in the room (or the floor, if there isn't one).
      */
     [TestClass()]
-    public class TallNarrowChamberTests
+    public class SlowChamberTests
     {
-        private TallNarrowChamber Chamber;
+        private IChamber _chamber;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            Chamber = new TallNarrowChamber();
+            _chamber = new SlowChamber();
         }
 
         // [TestCleanup]
@@ -33,13 +33,13 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         // }
 
         /*
-         * Spawn rock, move it down 3 times and freeze it. Then validate chamber state.
+         * Spawn rock and freeze it. Then validate chamber state.
          */
         [TestMethod()]
         public void SpawnRockTest()
         {
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.PutRockToSleep();
             List<List<int>> ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -50,7 +50,18 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,0,0,0,0},
                 new() {0,0,0,0,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+        }
+
+        /*
+         * Spawn rock and move it down to a free space, the MoveRockWithRules method should return correct value.
+         */
+        [TestMethod()]
+        public void MoveRockWithRulesTest_ReturnTrue()
+        {
+            _chamber.SpawnRock(Rock.PLUS);
+            bool x = _chamber.MoveRockWithRules(Dir.DOWN);
+            Assert.IsTrue(x);
         }
 
         /*
@@ -59,12 +70,13 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_FallBelowGround()
         {
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);    // this move is already into ground, should not be executed
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            bool x = _chamber.MoveRockWithRules(Dir.DOWN);    // this move is already into ground, should not be executed
+            Assert.IsFalse(x);
+            _chamber.PutRockToSleep();
             List<List<int>> ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -75,8 +87,8 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,1,1,1,0,0},
                 new() {0,0,0,1,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(3L, Chamber.RockTowerHeight);
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(3L, _chamber.RockTowerHeight);
         }
 
         /*
@@ -85,18 +97,18 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_FallOntoExistingTower()
         {
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
-            Chamber.SpawnRock(Rock.SQUARE);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN); // this move will collide with existing rock tower
-            Chamber.PutRockToSleep();
-
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.SQUARE);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            bool x = _chamber.MoveRockWithRules(Dir.DOWN); // this move will collide with existing rock tower
+            Assert.IsFalse(x);
+            _chamber.PutRockToSleep();
             List<List<int>> ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -109,8 +121,17 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,1,1,1,0,0},
                 new() {0,0,0,1,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(5L, Chamber.RockTowerHeight);
+            // TODO: represent like this:
+            var todo = """
+                       .......
+                       ..BB...
+                       ..BB...
+                       ...A...
+                       ..AAA..
+                       ...A...
+                       """;
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(5L, _chamber.RockTowerHeight);
         }
 
         /*
@@ -119,11 +140,12 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_MoveBeyondLeftChamberWall()
         {
-            Chamber.SpawnRock(Rock.SQUARE);
-            Chamber.MoveRockWithRules(Dir.LEFT);
-            Chamber.MoveRockWithRules(Dir.LEFT);
-            Chamber.MoveRockWithRules(Dir.LEFT);    // this move will collide with left chamber wall
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.SQUARE);
+            _chamber.MoveRockWithRules(Dir.LEFT);
+            _chamber.MoveRockWithRules(Dir.LEFT);
+            bool x = _chamber.MoveRockWithRules(Dir.LEFT);    // this move will collide with left chamber wall
+            Assert.IsTrue(x);   // side collision does not prevent down movement
+            _chamber.PutRockToSleep();
 
             List<List<int>> ExpectedState = new()
             {
@@ -135,7 +157,7 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,0,0,0,0},
             };
             
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
         }
 
         /*
@@ -144,10 +166,11 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_MoveBeyondRightChamberWall()
         {
-            Chamber.SpawnRock(Rock.MINUS);
-            Chamber.MoveRockWithRules(Dir.RIGHT);
-            Chamber.MoveRockWithRules(Dir.RIGHT);    // this move will collide with right chamber wall
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.MINUS);
+            _chamber.MoveRockWithRules(Dir.RIGHT);
+            bool x = _chamber.MoveRockWithRules(Dir.RIGHT);    // this move will collide with right chamber wall
+            Assert.IsTrue(x);   // side collision does not prevent down movement
+            _chamber.PutRockToSleep();
 
             List<List<int>> ExpectedState = new()
             {
@@ -158,7 +181,7 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,0,0,0,0},
             };
 
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
         }
 
         /*
@@ -168,19 +191,20 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_MoveRightToCollideWithTower()
         {
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.MoveRockWithRules(Dir.RIGHT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.RIGHT); // this move will collide with existing rock tower
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.MoveRockWithRules(Dir.RIGHT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            bool x = _chamber.MoveRockWithRules(Dir.RIGHT); // this move will collide with existing rock tower
+            Assert.IsTrue(x);   // side collision does not prevent down movement
+            _chamber.PutRockToSleep();
 
             List<List<int>> ExpectedState = new()
             {
@@ -195,8 +219,8 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,1,1,1,0},
                 new() {0,0,0,0,1,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(5L, Chamber.RockTowerHeight);
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(5L, _chamber.RockTowerHeight);
         }
 
         /*
@@ -206,20 +230,21 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void MoveRockWithRulesTest_MoveLeftToCollideWithTower()
         {
-            Chamber.SpawnRock(Rock.PLUS);
-            Chamber.MoveRockWithRules(Dir.LEFT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
-            Chamber.SpawnRock(Rock.SQUARE);
-            Chamber.MoveRockWithRules(Dir.RIGHT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.LEFT); // this move will collide with existing rock tower
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.PLUS);
+            _chamber.MoveRockWithRules(Dir.LEFT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.SQUARE);
+            _chamber.MoveRockWithRules(Dir.RIGHT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            bool x = _chamber.MoveRockWithRules(Dir.LEFT); // this move will collide with existing rock tower
+            Assert.IsTrue(x);   // side collision does not prevent down movement
+            _chamber.PutRockToSleep();
 
             List<List<int>> ExpectedState = new()
             {
@@ -233,15 +258,16 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,1,1,1,0,0,0},
                 new() {0,0,1,0,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(4L, Chamber.RockTowerHeight);
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(4L, _chamber.RockTowerHeight);
         }
 
         [TestMethod()]
         public void PutRockToSleepTest()
         {
-            Chamber.SpawnRock(Rock.MINUS);
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.MINUS);
+            _chamber.PutRockToSleep();
+
             List<List<int>> ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -250,7 +276,7 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,0,0,0,0},
                 new() {0,0,0,0,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
         }
 
         /*
@@ -259,25 +285,25 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
         [TestMethod()]
         public void RemoveUnreachablePartOfChamberTest()
         {
-            Chamber.SpawnRock(Rock.I);
-            Chamber.MoveRockWithRules(Dir.RIGHT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
-            Chamber.SpawnRock(Rock.MINUS);
-            Chamber.MoveRockWithRules(Dir.RIGHT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
-            Chamber.SpawnRock(Rock.MINUS);
-            Chamber.MoveRockWithRules(Dir.LEFT);
-            Chamber.MoveRockWithRules(Dir.LEFT);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.MoveRockWithRules(Dir.DOWN);
-            Chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.I);
+            _chamber.MoveRockWithRules(Dir.RIGHT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.MINUS);
+            _chamber.MoveRockWithRules(Dir.RIGHT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
+            _chamber.SpawnRock(Rock.MINUS);
+            _chamber.MoveRockWithRules(Dir.LEFT);
+            _chamber.MoveRockWithRules(Dir.LEFT);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.MoveRockWithRules(Dir.DOWN);
+            _chamber.PutRockToSleep();
             List<List<int>> ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -291,9 +317,9 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,1,0,0,0},
                 new() {0,0,0,1,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(6L, Chamber.RockTowerHeight);
-            Chamber.RemoveUnreachablePartOfChamber();
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(6L, _chamber.RockTowerHeight);
+            _chamber.RemoveUnreachablePartOfChamber();
             ExpectedState = new()
             {
                 // 0 - empty space, 1 - dead rock
@@ -302,11 +328,11 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,0,0,0,0,0},
                 new() {1,1,1,1,0,0,0},
             };
-            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), Chamber.State.ToList()));
-            Assert.AreEqual(6L, Chamber.RockTowerHeight);
+            Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
+            Assert.AreEqual(6L, _chamber.RockTowerHeight);
         }
 
-        // PrintPretty(Chamber.State.ToList(), "\t");
+        // PrintPretty(SlowChamber.State, "\t");
         // PrintPretty(ToBoolMatrix(ExpectedState), "\t");
 
         /*
