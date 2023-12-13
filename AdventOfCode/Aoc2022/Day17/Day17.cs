@@ -70,19 +70,30 @@ namespace AdventOfCode.Aoc2022.Day17
             var reduceChamberPeriod = 5_000;
             var printPeriod = 100_000;
 
-            IChamber chamber = new SlowChamber();
+            IChamber chamber = new ByteChamber();
 
             int jetCount = 0;
             int rockIndex = 0; // I need Int for list index
 
             for (long i = 0; i < rockAmount; i++)
             {
-                chamber.SpawnRock(orderedRocks[rockIndex++ % orderedRocks.Count]);
+                var rock = orderedRocks[rockIndex++ % orderedRocks.Count];
+                chamber.SpawnRock(rock);
+                int rockSideMoves = 0;
+                int rockDownMoves = 0;
                 do
                 {
-                    chamber.MoveRockWithRules(jetBursts[jetCount++ % jetBursts.Count]);
-                } while (chamber.MoveRockWithRules(Dir.DOWN));
-                chamber.PutRockToSleep();
+                    chamber.MoveRockWithRules(
+                        direction: jetBursts[jetCount++ % jetBursts.Count],
+                        checkWall: ++rockSideMoves > (rock.GetWidth() > 3 ? 1 : 2),
+                        checkTower: rockDownMoves > 3
+                    );
+                } while (chamber.MoveRockWithRules(
+                             direction: Dir.DOWN,
+                             checkWall: rockDownMoves > 2,
+                             checkTower: ++rockDownMoves > 3
+                         ));
+            chamber.PutRockToSleep();
 
                 // reduce chamber size periodically
                 if (i % reduceChamberPeriod == 0L)

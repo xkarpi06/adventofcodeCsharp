@@ -13,6 +13,11 @@ namespace AdventOfCode.Aoc2022.Day17
      */
     public interface IChamber
     {
+        /*
+         * The chamber state is a 2D matrix where
+         *  true = piece of rock tower
+         *  false = empty space
+         */
         public List<List<bool>> State { get; }
         public long RockTowerHeight { get; }
 
@@ -26,7 +31,7 @@ namespace AdventOfCode.Aoc2022.Day17
          * Move rock if it can be moved (tower interference & walls prevent movement)
          * returns false if rock can't fall anymore
          */
-        public bool MoveRockWithRules(Dir direction);
+        public bool MoveRockWithRules(Dir direction, bool checkWall = true, bool checkTower = true);
 
         /*
          * Mark current falling rock as stationary (which makes it a part of tower of rocks)

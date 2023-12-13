@@ -17,14 +17,15 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
      * edge is THREE (3) units above the highest rock in the room (or the floor, if there isn't one).
      */
     [TestClass()]
-    public class SlowChamberTests
+    public class ChamberTests
     {
         private IChamber _chamber;
 
         [TestInitialize]
         public void TestInitialize()
         {
-            _chamber = new SlowChamber();
+            _chamber = new ByteChamber();
+            // _chamber = new SlowChamber();
         }
 
         // [TestCleanup]
@@ -87,6 +88,8 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
                 new() {0,0,1,1,1,0,0},
                 new() {0,0,0,1,0,0,0},
             };
+            PrintPrettyBool(_chamber.State);
+            PrintPrettyInt(ExpectedState);
             Assert.IsTrue(ChamberEquality(ToBoolMatrix(ExpectedState), _chamber.State));
             Assert.AreEqual(3L, _chamber.RockTowerHeight);
         }
@@ -332,8 +335,15 @@ namespace AdventOfCode.Aoc2022.Day17.Tests
             Assert.AreEqual(6L, _chamber.RockTowerHeight);
         }
 
-        // PrintPretty(SlowChamber.State, "\t");
-        // PrintPretty(ToBoolMatrix(ExpectedState), "\t");
+        private static void PrintPrettyInt(List<List<int>> list, string delimiter = "")
+        {
+            PrintPretty(list.Select(x => x.Select(y => (y > 0) ? 'X' : '.').ToList()).ToList());
+        }
+
+        private static void PrintPrettyBool(List<List<bool>> list, string delimiter = "")
+        {
+            PrintPretty(list.Select(x => x.Select(y => y ? 'X' : '.').ToList()).ToList());
+        }
 
         /*
          * Util function for printing 2D matrices.

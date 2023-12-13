@@ -4,43 +4,52 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace AdventOfCode.Aoc2022.Day17
 {
-    public class SlowChamber : IChamber
+    /*
+     * Chamber is represented by a column of bytes, each byte represents one row in chamber where 0s and 1s represent 
+     * spot in chamber (0 => empty space, 1 => tower). The chamber is 7 wide so only 7 least significant (right) bits
+     * are being used.
+     */
+    public class ByteChamber : IChamber
     {
         private const int OFFSET_LEFT = 2;
         private const int OFFSET_BOTTOM = 3;
         private const int WIDTH = 7;
         private CurrentRock? _currentRock;
         private long _cutChamberFloors;
-        private LinkedList<List<bool>> _state;
+        private List<byte> _state;
 
-        public List<List<bool>> State => _state.ToList();
+        public List<List<bool>> State =>
+            _state.Select(
+                row => Enumerable.Range(0, WIDTH).Select(i => ((row >> i) & 1) == 1).Reverse().ToList()
+            ).ToList();
 
         public long RockTowerHeight =>
-            _state.Count - _state.TakeWhile(row => row.All(cell => !cell)).Count() + _cutChamberFloors;
+            _state.Count - _state.TakeWhile(row => row == 0).Count() + _cutChamberFloors;
 
-        public SlowChamber()
+        public ByteChamber()
         {
-            _state = new LinkedList<List<bool>>();
+            _state = new List<byte>();
             _currentRock = null;
             _cutChamberFloors = 0;
         }
 
         /*
-         * Each rock appears so that its left edge is two units away from the left wall and its bottom
-         * edge is three units above the highest rock in the room (or the floor, if there isn't one).
+         * Each rock appears so that its left edge is two units (2) away from the left wall and its bottom
+         * edge is three units (3) above the highest rock in the room (or the floor, if there isn't one).
          */
         public void SpawnRock(Rock rock)
         {
-            var topVoidRows = _state.TakeWhile(row => row.All(cell => !cell)).Count();
+            var topVoidRows = _state.TakeWhile(row => row == 0).Count();
             var voidRowsNeeded = OFFSET_BOTTOM + rock.GetHeight();
             var rowsMissing = voidRowsNeeded - topVoidRows;
 
             for (var i = 0; i < rowsMissing; i++)
             {
-                _state.AddFirst(Enumerable.Repeat(false, WIDTH).ToList());
+                _state.Insert(0, 0); // int 0 means 0b00000000
             }
 
             _currentRock = new CurrentRock(rock, new XY(OFFSET_LEFT, rowsMissing > 0 ? 0 : 0 - rowsMissing));
@@ -53,31 +62,29 @@ namespace AdventOfCode.Aoc2022.Day17
         public bool MoveRockWithRules(Dir direction, bool checkWall, bool checkTower)
         {
             // check if rock can move (checks only walls and bottom)
-            if (ChamberWallPreventsMove(direction)) return direction != Dir.DOWN;
+            if (checkWall && ChamberWallPreventsMove(direction)) return direction != Dir.DOWN;
             // move rock
             MoveRock(direction);
             // check tower interference & undo move if needed
-            if (!CurrentRockOverlaysTower()) return true;
+            if (!checkTower || !CurrentRockOverlaysTower()) return true;
             MoveRock(direction.Opposite());
             return direction != Dir.DOWN;
         }
 
         /*
-         * moves rock without checking interference (walls prevent movement)
+         * moves rock without checking interference or walls
          */
         private void MoveRock(Dir direction)
         {
-            if (_currentRock == null || ChamberWallPreventsMove(direction)) return;
-            XY old = _currentRock.Offset;
-            var offsetNew = direction switch
+            if (_currentRock == null) return;
+            switch (direction)
             {
-                Dir.LEFT => new XY(old.X - 1, old.Y),
-                Dir.RIGHT => new XY(old.X + 1, old.Y),
-                Dir.DOWN => new XY(old.X, old.Y + 1), // fall
-                Dir.UP => new XY(old.X, old.Y - 1), // unused
-                _ => old
+                case Dir.LEFT: _currentRock.Offset.X--; break;
+                case Dir.RIGHT: _currentRock.Offset.X++; break; 
+                case Dir.DOWN: _currentRock.Offset.Y++; break; // fall
+                case Dir.UP: _currentRock.Offset.Y--; break; // unused
+                default: break;
             };
-            _currentRock.Offset = offsetNew;
         }
 
         /*
@@ -99,33 +106,17 @@ namespace AdventOfCode.Aoc2022.Day17
 
         private bool CurrentRockOverlaysTower()
         {
-            return _currentRock?.Rock.GetCoords().Any(
-                coord => _state.ElementAt(_currentRock.Offset.Y + coord.Y).ElementAt(_currentRock.Offset.X + coord.X)
-            ) ?? false;
-            // var rockOffset = _currentRock.Offset;
-            // var rockCoords = _currentRock?.Rock.GetCoords();
-            // if (rockCoords == null) return false;
-            // var i = 0;
-            // var j = 0;
-            // foreach (var row in _state)
-            // {
-            //     j = 0;
-            //     foreach (var cell in row)
-            //     {
-            //         // if a part of rock is within current cell (i,j) and that cell contains tower (cell==true)
-            //         // the rock overlays tower => return true;
-            //         if (cell)
-            //         {
-            //             foreach (var coord in rockCoords)
-            //             {
-            //                 if (rockOffset.Y + coord.Y == i && rockOffset.X + coord.X == j) return true;
-            //             }
-            //         }
-            //         j++;
-            //     }
-            //     i++;
-            // }
-            // return false;
+            if (_currentRock == null) return false;
+            byte[] rockBytes = _currentRock.Rock.GetCoordsByteArray();
+            for (int i = 0; i < rockBytes.Length; i++)
+            {
+                byte updatedRockByte = ApplyRockOffset(rockBytes[i]);
+                // get corresponding row in chamber
+                byte chamberRow = _state.ElementAt(_currentRock.Offset.Y + i);
+                // compare rock & chamber state at the row
+                if ((updatedRockByte & chamberRow) > 0) return true;
+            }
+            return false;
         }
 
         /*
@@ -133,13 +124,25 @@ namespace AdventOfCode.Aoc2022.Day17
          */
         public void PutRockToSleep()
         {
-            foreach (XY coord in _currentRock?.Rock.GetCoords() ?? Enumerable.Empty<XY>())
+            byte[] rockBytes = _currentRock.Rock.GetCoordsByteArray();
+            for (int i = 0; i < rockBytes.Length; i++)
             {
-                _state.ElementAt(_currentRock.Offset.Y + coord.Y)[_currentRock.Offset.X + coord.X] = true;
+                byte updatedRockByte = ApplyRockOffset(rockBytes[i]);
+                byte chamberRow = _state.ElementAt(_currentRock.Offset.Y + i);
+                _state[_currentRock.Offset.Y + i] = (byte) (chamberRow | updatedRockByte);
             }
             _currentRock = null;
         }
 
+        /*
+         * rockCoords are normalized to top left corner, (such as 0b11000000) so we need to account for chamber
+         * width (7) and rock offset first => chamber is at 7 LSB (right bits)
+         */
+        private byte ApplyRockOffset(byte rockByte)
+        {
+            byte updatedRockByte = (byte)(rockByte >> (8 - WIDTH)); // place rock by chamber's left wall
+            return (byte)(updatedRockByte >> _currentRock.Offset.X);
+        }
 
         /*
          * After some rocks have fallen, there will probably form an unreachable part of chamber. Such part of chamber
@@ -149,7 +152,7 @@ namespace AdventOfCode.Aoc2022.Day17
         public void RemoveUnreachablePartOfChamber()
         {
             var dist = Util.GetDistances<bool>(
-                matrix: _state.ToList(),
+                matrix: State,
                 start: new XY(0, 0),
                 advancingRule: (_, neighbor) => !neighbor // reachable must be false, contain void
             );
@@ -164,10 +167,7 @@ namespace AdventOfCode.Aoc2022.Day17
         {
             int toRemove = _state.Count - 1 - y;
             _cutChamberFloors += toRemove;
-            for (var i = 0; i < toRemove; i++)
-            {
-                _state.RemoveLast();
-            }
+            _state.RemoveRange(_state.Count - toRemove, toRemove);
         }
     }
 }
