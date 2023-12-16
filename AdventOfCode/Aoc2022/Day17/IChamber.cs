@@ -44,5 +44,16 @@ namespace AdventOfCode.Aoc2022.Day17
          * it from chamber State. (To save memory)
          */
         public void RemoveUnreachablePartOfChamber();
+
+        /*
+         * Prints chamber state in user-friendly way
+         */
+        public void PrintState()
+        {
+            foreach (var row in State.Select(x => x.Select(y => y ? 'X' : '.').ToList()).ToList())
+            {
+                Console.WriteLine(string.Join("", row));
+            }
+        }
     }
 }

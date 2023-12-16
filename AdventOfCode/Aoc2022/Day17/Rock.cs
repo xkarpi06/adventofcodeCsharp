@@ -23,6 +23,30 @@ namespace AdventOfCode.Aoc2022.Day17
         private static readonly HashSet<XY> ICoords = new HashSet<XY> { new(0, 0), new(0, 1), new(0, 2), new(0, 3) };
         private static readonly HashSet<XY> SquareCoords = new HashSet<XY> { new(0, 0), new(1, 0), new(0, 1), new(1, 1) };
 
+        private static readonly byte[] MinusCoordsByteArray = [
+            0b11110000, // ####
+        ];
+        private static readonly byte[] PlusCoordsByteArray = [
+            0b01000000, // .#.
+            0b11100000, // ###
+            0b01000000, // .#.
+        ];
+        private static readonly byte[] LCoordsByteArray = [
+            0b00100000, // ..#
+            0b00100000, // ..#
+            0b11100000, // ###
+        ];
+        private static readonly byte[] ICoordsByteArray = [
+            0b10000000, // #
+            0b10000000, // #
+            0b10000000, // #
+            0b10000000, // #
+        ];
+        private static readonly byte[] SquareCoordsByteArray = [
+            0b11000000, // ##   
+            0b11000000, // ##
+        ];
+
         /*
          * Returns set of 2D coordinates representing each pixel of the shape offset from top left corner
          * Each shape has origin (0,0) in top-left corner
@@ -70,6 +94,22 @@ namespace AdventOfCode.Aoc2022.Day17
                     0b11000000, // ##   
                     0b11000000, // ##
                 ],
+                _ => []
+            };
+        }
+
+        /*
+         * Returns byte array representing coordinates of each pixel of the shape as if spawned in top left corner
+         */
+        public static byte[] GetCoordsByteArray3(this Rock rock)
+        {
+            return rock switch
+            {
+                Rock.MINUS => MinusCoordsByteArray,
+                Rock.PLUS => PlusCoordsByteArray,
+                Rock.L => LCoordsByteArray,
+                Rock.I => ICoordsByteArray,
+                Rock.SQUARE => SquareCoordsByteArray,
                 _ => []
             };
         }

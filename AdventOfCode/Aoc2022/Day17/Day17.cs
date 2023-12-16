@@ -12,7 +12,7 @@ namespace AdventOfCode.Aoc2022.Day17
      * Day       Time   Rank  Score       Time   Rank  Score
      *  17       >24h  16399      0          -      -      - 
      */
-    class Day17
+    public class Day17
     {
         /*
          * There is a very tall, narrow chamber. Large, oddly-shaped rocks are falling into the chamber from above.
@@ -25,22 +25,25 @@ namespace AdventOfCode.Aoc2022.Day17
          */
         static void Main(string[] args)
         {
+            Run(new ByteChamber3(), reducePeriod: 100_000_000, showResult: true);
+        }
+
+        public static void Run(IChamber chamber, long? rocks = null, int? reducePeriod = null, bool showResult = false)
+        {
             List<string> input = new InputLoader(AoCYear.AOC_2022).LoadStrings("Day17Input.txt");
             var jetBursts = ParseInput(input);
-            // Part1(jetBursts);
-            // Part2(jetBursts);
-            MeasuredPartExecution(Part2, jetBursts);
+            Part1(jetBursts, chamber, showResult);
+            Part2(jetBursts, chamber, rocks, reducePeriod, showResult);
         }
 
         /*
          * How many units tall will the tower of rocks be after 2022 rocks have stopped falling?
          */
-        static void Part1(List<Dir> jetBursts)
+        static void Part1(List<Dir> jetBursts, IChamber chamber, bool showResult = true)
         {
             var orderedRocks = RockExtensions.GetOrderedList();
-            var rockAmount = 5;
+            var rockAmount = 2022;
 
-            IChamber chamber = new SlowChamber();
             var jetCount = 0;
 
             for (int i = 0; i < rockAmount; i++)
@@ -52,32 +55,33 @@ namespace AdventOfCode.Aoc2022.Day17
                 } while (chamber.MoveRockWithRules(Dir.DOWN));
                 chamber.PutRockToSleep();
             }
-            Console.WriteLine($"p1> {chamber.RockTowerHeight}");
+            if (showResult) Console.WriteLine($"p1> {chamber.RockTowerHeight}");
         }
-
 
         /*
          * How tall will the tower be after 1.000.000.000.000 rocks have stopped?
          *
-         * Not finished. Calculation is too slow. 1M rocks per second are being processed, which would require 1M
-         * seconds (10 days) to complete.
+         * Not finished. Calculation is too slow. 10M rocks per second are being processed, which would require 100K
+         * seconds (1 day) to complete.
          */
-        static void Part2(List<Dir> jetBursts)
+        static void Part2(List<Dir> jetBursts, IChamber chamber, long? rocks = null, int? reducePeriod = null, bool showResult = true)
         {
             var orderedRocks = RockExtensions.GetOrderedList();
             // var rockAmount = 1_000_000_000_000L; // goal was 1_000_000_000_000L
             var rockAmount = 1_000_000L; // goal was 1_000_000_000_000L
-            var reduceChamberPeriod = 5_000;
+            var reduceChamberPeriod = 5_000; // (max chamber size 42)
             var printPeriod = 100_000;
 
-            IChamber chamber = new ByteChamber();
+            rockAmount = rocks ?? rockAmount;
+            reduceChamberPeriod = reducePeriod ?? reduceChamberPeriod;
 
             int jetCount = 0;
             int rockIndex = 0; // I need Int for list index
-
+            // int maxChamberSize = 0;
             for (long i = 0; i < rockAmount; i++)
             {
                 var rock = orderedRocks[rockIndex++ % orderedRocks.Count];
+                var rockWidth = rock.GetWidth();
                 chamber.SpawnRock(rock);
                 int rockSideMoves = 0;
                 int rockDownMoves = 0;
@@ -85,7 +89,7 @@ namespace AdventOfCode.Aoc2022.Day17
                 {
                     chamber.MoveRockWithRules(
                         direction: jetBursts[jetCount++ % jetBursts.Count],
-                        checkWall: ++rockSideMoves > (rock.GetWidth() > 3 ? 1 : 2),
+                        checkWall: ++rockSideMoves > (rockWidth > 3 ? 1 : 2),
                         checkTower: rockDownMoves > 3
                     );
                 } while (chamber.MoveRockWithRules(
@@ -100,15 +104,16 @@ namespace AdventOfCode.Aoc2022.Day17
                 {
                     rockIndex %= reduceChamberPeriod;
                     chamber.RemoveUnreachablePartOfChamber();
-
+                    // maxChamberSize = Math.Max(maxChamberSize, chamber.State.Count);
                     // if (i % printPeriod == 0L)
                     // {
-                    //     Console.WriteLine($"rocks={i}, chamber-size={chamber.State.Count}, tower-height={chamber.RockTowerHeight}");
+                        // Console.WriteLine($"rocks={i}, chamber-size={chamber.State.Count}, tower-height={chamber.RockTowerHeight}");
                     // }
                 }
             }
 
-            Console.WriteLine($"p2> {chamber.RockTowerHeight}");
+            if (showResult) Console.WriteLine($"p2> {chamber.RockTowerHeight}");
+            // Console.WriteLine($"max chamber size> {maxChamberSize}");
         }
 
         private static List<Dir> ParseInput(List<string> input)
@@ -122,16 +127,6 @@ namespace AdventOfCode.Aoc2022.Day17
                     default: return Dir.RIGHT;
                 }
             }).ToList();
-        }
-
-        public delegate void Part(List<Dir> jetBursts);
-
-        private static void MeasuredPartExecution(Part p, List<Dir> list)
-        {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-            p(list);
-            watch.Stop();
-            Console.WriteLine($"Elapsed time: {watch.ElapsedMilliseconds}ms");
         }
     }
 }
