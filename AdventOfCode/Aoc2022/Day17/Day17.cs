@@ -25,7 +25,7 @@ namespace AdventOfCode.Aoc2022.Day17
          */
         static void Main(string[] args)
         {
-            Run(new ByteChamber3(), reducePeriod: 100_000_000, showResult: true);
+            Run(new ByteChamber4(), reducePeriod: 100_000_000, showResult: true);
         }
 
         public static void Run(IChamber chamber, long? rocks = null, int? reducePeriod = null, bool showResult = false)
@@ -67,7 +67,6 @@ namespace AdventOfCode.Aoc2022.Day17
         static void Part2(List<Dir> jetBursts, IChamber chamber, long? rocks = null, int? reducePeriod = null, bool showResult = true)
         {
             var orderedRocks = RockExtensions.GetOrderedList();
-            // var rockAmount = 1_000_000_000_000L; // goal was 1_000_000_000_000L
             var rockAmount = 1_000_000L; // goal was 1_000_000_000_000L
             var reduceChamberPeriod = 5_000; // (max chamber size 42)
             var printPeriod = 100_000;
@@ -77,26 +76,14 @@ namespace AdventOfCode.Aoc2022.Day17
 
             int jetCount = 0;
             int rockIndex = 0; // I need Int for list index
-            // int maxChamberSize = 0;
             for (long i = 0; i < rockAmount; i++)
             {
                 var rock = orderedRocks[rockIndex++ % orderedRocks.Count];
-                var rockWidth = rock.GetWidth();
                 chamber.SpawnRock(rock);
-                int rockSideMoves = 0;
-                int rockDownMoves = 0;
                 do
                 {
-                    chamber.MoveRockWithRules(
-                        direction: jetBursts[jetCount++ % jetBursts.Count],
-                        checkWall: ++rockSideMoves > (rockWidth > 3 ? 1 : 2),
-                        checkTower: rockDownMoves > 3
-                    );
-                } while (chamber.MoveRockWithRules(
-                             direction: Dir.DOWN,
-                             checkWall: rockDownMoves > 2,
-                             checkTower: ++rockDownMoves > 3
-                         ));
+                    chamber.MoveRockWithRules(direction: jetBursts[jetCount++ % jetBursts.Count]);
+                } while (chamber.MoveRockWithRules(direction: Dir.DOWN));
             chamber.PutRockToSleep();
 
                 // reduce chamber size periodically
@@ -104,7 +91,6 @@ namespace AdventOfCode.Aoc2022.Day17
                 {
                     rockIndex %= reduceChamberPeriod;
                     chamber.RemoveUnreachablePartOfChamber();
-                    // maxChamberSize = Math.Max(maxChamberSize, chamber.State.Count);
                     // if (i % printPeriod == 0L)
                     // {
                         // Console.WriteLine($"rocks={i}, chamber-size={chamber.State.Count}, tower-height={chamber.RockTowerHeight}");
@@ -113,7 +99,6 @@ namespace AdventOfCode.Aoc2022.Day17
             }
 
             if (showResult) Console.WriteLine($"p2> {chamber.RockTowerHeight}");
-            // Console.WriteLine($"max chamber size> {maxChamberSize}");
         }
 
         private static List<Dir> ParseInput(List<string> input)

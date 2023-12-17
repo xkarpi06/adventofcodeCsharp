@@ -10,7 +10,7 @@ namespace AoCBenchmark
 
         [Params(1_000_000)]
         public int N;
-
+        
         [Benchmark(Baseline = true)]
         public void SlowChamber()
         {
@@ -24,7 +24,7 @@ namespace AoCBenchmark
             _chamber = new ByteChamber();
             Day17.Run(_chamber, N);
         }
-
+        
         [Benchmark]
         public void ByteChamber2()
         {
@@ -36,6 +36,13 @@ namespace AoCBenchmark
         public void ByteChamber3()
         {
             _chamber = new ByteChamber3();
+            Day17.Run(_chamber, N, 100_000_000); // doesn't have to be reduced so often
+        }
+
+        [Benchmark]
+        public void ByteChamber4()
+        {
+            _chamber = new ByteChamber4();
             Day17.Run(_chamber, N, 100_000_000); // doesn't have to be reduced so often
         }
     }

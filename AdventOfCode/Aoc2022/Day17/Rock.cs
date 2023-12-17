@@ -115,6 +115,36 @@ namespace AdventOfCode.Aoc2022.Day17
         }
 
         /*
+         * Each rock is represented by a single integer value, where 1 represents rock piece, 0 represents void.
+         * The integers are hard-coded for chamber WIDTH = 7 and LEFT_OFFSET = 2
+         */
+        public static int GetIntValueFixedWidth7Offset2(this Rock rock)
+        {
+            return rock switch
+            {
+                // ..####
+                Rock.MINUS => 30,     // 00000000 00000000 00000000 00011110
+                // ...#.
+                // ..###
+                // ...#.
+                Rock.PLUS => 531_464, // 00000000 00001000 00011100 00001000
+                // ....#
+                // ....#
+                // ..###
+                Rock.L => 263_196,    // 00000000 00000100 00000100 00011100
+                // ..#
+                // ..#
+                // ..#
+                // ..#
+                Rock.I => 269_488_144,// 00010000 00010000 00010000 00010000
+                // ..##
+                // ..##
+                Rock.SQUARE => 6_168, // 00000000 00000000 00011000 00011000
+                _ => 0
+            };
+        }
+
+        /*
          * Hard coded because the shapes will hardly ever change
          */
         public static int GetHeight(this Rock rock)
