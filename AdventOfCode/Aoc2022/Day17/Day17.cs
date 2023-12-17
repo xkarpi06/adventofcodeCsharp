@@ -26,6 +26,7 @@ namespace AdventOfCode.Aoc2022.Day17
         static void Main(string[] args)
         {
             Run(new ByteChamber4(), reducePeriod: 100_000_000, showResult: true);
+            // RunInChamber(new ByteChamber5(), 1_000_000);
         }
 
         public static void Run(IChamber chamber, long? rocks = null, int? reducePeriod = null, bool showResult = false)
@@ -34,6 +35,13 @@ namespace AdventOfCode.Aoc2022.Day17
             var jetBursts = ParseInput(input);
             Part1(jetBursts, chamber, showResult);
             Part2(jetBursts, chamber, rocks, reducePeriod, showResult);
+        }
+
+        public static void RunInChamber(IChamberRunnable chamber, long rocks)
+        {
+            string jetBursts = new InputLoader(AoCYear.AOC_2022).LoadStrings("Day17Input.txt")[0];
+            chamber.RunSimulation(2022, jetBursts);
+            chamber.RunSimulation(rocks, jetBursts);
         }
 
         /*

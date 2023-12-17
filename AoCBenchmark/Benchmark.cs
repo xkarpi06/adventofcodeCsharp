@@ -45,6 +45,12 @@ namespace AoCBenchmark
             _chamber = new ByteChamber4();
             Day17.Run(_chamber, N, 100_000_000); // doesn't have to be reduced so often
         }
+
+        [Benchmark]
+        public void ByteChamber5()
+        {
+            Day17.RunInChamber(new ByteChamber5(), N);
+        }
     }
 
     public class Benchmark
